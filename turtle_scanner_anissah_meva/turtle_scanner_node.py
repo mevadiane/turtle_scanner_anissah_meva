@@ -8,9 +8,9 @@ class TurtleScanner(Node):
         self.pose_scanner = None
         self.pose_target = None
         self.scanner = self.create_subscription(Pose, "/turtle1/pose", self.scan, 10)
-        self.target = self.create_subscription(Pose, "/turtle1/pose", self.target, 10)
+        self.target = self.create_subscription(Pose, "/turtle_target/pose", self.target, 10)
 
-        self.get_logger().info('TurtleScannerNode démarré — en attente des poses...')
+        self.get_logger().info('Node démarré — en attente des poses...')
 
     def scan(self, msg):
         self.pose_scanner = msg
