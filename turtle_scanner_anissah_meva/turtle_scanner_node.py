@@ -2,6 +2,8 @@ import rclpy
 from rclpy.node import Node
 from turtlesim.msg import Pose
 from geometry_msgs.msg import Twist
+import math
+
 
 class TurtleScanner(Node):
     def __init__(self):
@@ -10,8 +12,8 @@ class TurtleScanner(Node):
         self.pose_target = None
 
         # Partie 2
-        self.scanner = self.create_subscription(Pose, "/turtle1/pose", self.scan, 10)
-        self.target = self.create_subscription(Pose, "/turtle_target/pose", self.target, 10)
+        self.scan_sub = self.create_subscription(Pose, "/turtle1/pose", self.scan, 10)
+        self.target_sub = self.create_subscription(Pose, "/turtle_target/pose", self.target, 10)
 
         # Partie 3
         self.get_logger().info('Node démarré — en attente des poses...')
@@ -23,14 +25,14 @@ class TurtleScanner(Node):
         self.linear_speed= 2.0
         self.angular_speed = 1.5
         self.waypoint_tolerance = 0.3
-        self.Kp_ang = 4.0
-        self.Kp_lin = 1.5
+        self.Kp_ang = 5.0
+        self.Kp_lin = 5.0
 
         self.current_waypoint = 0
         self.scan_done = False
 
         self.waypoints = self.generate_waypoints()
-        self.get_logger().info(f'Waypoints générés : {self.waypoints}')\
+        self.get_logger().info(f'Waypoints générés : {self.waypoints}')
         self.cmd_pub= self.create_publisher(Twist, "/turtle1/cmd_vel", 10)
         self.timer = self.create_timer(1/20, self.scan_step)
 
@@ -60,10 +62,10 @@ class TurtleScanner(Node):
         return waypoints
     
     def compute_angle(self, A, B):
-        return atan2(B[1] - A[1], B[0] - A[0])
+        return math.atan2(B[1] - A[1], B[0] - A[0])
 
     def compute_distance(self, A, B):
-        return sqrt((B[0] - A[0])**2 + (B[1] - A[1])**2)
+        return math.sqrt((B[0] - A[0])**2 + (B[1] - A[1])**2)
 
     def scan_step(self):
         if self.pose_scanner is None:
@@ -89,7 +91,7 @@ class TurtleScanner(Node):
             return
 
         theta_desired = self.compute_angle(A, B)
-        error_angle = atan(tan((theta_desired - self.pose_scanner.theta) / 2))
+        error_angle = math.atan(math.tan((theta_desired - self.pose_scanner.theta) / 2))
 
         angular_vel = self.Kp_ang * error_angle
         linear_vel  = self.Kp_lin * distance
