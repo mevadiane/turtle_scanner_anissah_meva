@@ -3,8 +3,10 @@ from rclpy.node import Node
 from turtlesim.msg import Pose
 from geometry_msgs.msg import Twist
 from std_msgs.msg import Bool
+from turtle_interfaces.srv import ResetMission
+from turtlesim.srv import Spawn, Kill
 import math
-
+import random
 
 class TurtleScanner(Node):
     def __init__(self):
@@ -42,6 +44,10 @@ class TurtleScanner(Node):
         self.detected = False
         self.detected_pub = self.create_publisher(Bool, "/target_detected", 10)
 
+        # Partie 5
+        self.reset_service = self.create_service(ResetMission, '/reset_mission', self.reset_callback)
+        self.spawn_client = self.create_client(Spawn, "/spawn")
+        self.kill_client = self.create_client(Kill, "/kill")
 
     # Partie 2
     def scan(self, msg):
@@ -79,8 +85,6 @@ class TurtleScanner(Node):
             return
         if self.scan_done:
             return
-
-        
 
         # Partie 4
         if self.pose_target is not None and not self.detected:
@@ -144,7 +148,27 @@ class TurtleScanner(Node):
         cmd.linear.x  = 0.0
         cmd.angular.z = 0.0
         self.cmd_pub.publish(cmd)
-        
+
+    # Partie 5
+    def reset_callback(self):
+        self.stop()
+        self.call_kill_service('turtle_target')
+        self.pose_target = msg
+        self.call_spawn_service
+
+    def call_kill_service(self, name):
+        req = Kill.Request()
+        req.name = name
+        self.kill_client.call_async(req)
+
+    def call_spawn_service(self, x, y, name):
+        req = Spawn.Request()
+        req.x = x
+        req.y = y
+        req.theta = 0.0
+        req.name = name
+        self.spawn_client.call_async(req)
+
 def main(args=None):
 	rclpy.init(args=args)
 	node = TurtleScanner()
