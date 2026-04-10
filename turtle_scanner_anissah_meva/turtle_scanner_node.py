@@ -2,12 +2,13 @@ import rclpy
 from rclpy.node import Node
 from turtlesim.msg import Pose
 from geometry_msgs.msg import Twist
+from std_msgs.msg import Bool
 import math
 
 
 class TurtleScanner(Node):
     def __init__(self):
-        super().__init__('set_way_point')
+        super().__init__('turtle_scanner')
         self.pose_scanner = None
         self.pose_target = None
 
@@ -25,8 +26,8 @@ class TurtleScanner(Node):
         self.linear_speed= 2.0
         self.angular_speed = 1.5
         self.waypoint_tolerance = 0.3
-        self.Kp_ang = 5.0
-        self.Kp_lin = 5.0
+        self.Kp_ang = 8.0
+        self.Kp_lin = 1.0
 
         self.current_waypoint = 0
         self.scan_done = False
@@ -35,6 +36,12 @@ class TurtleScanner(Node):
         self.get_logger().info(f'Waypoints générés : {self.waypoints}')
         self.cmd_pub= self.create_publisher(Twist, "/turtle1/cmd_vel", 10)
         self.timer = self.create_timer(1/20, self.scan_step)
+
+        # Partie 4
+        self.detection_radius = 1.5
+        self.detected = False
+        self.detected_pub = self.create_publisher(Bool, "/target_detected", 10)
+
 
     # Partie 2
     def scan(self, msg):
@@ -73,6 +80,33 @@ class TurtleScanner(Node):
         if self.scan_done:
             return
 
+        
+
+        # Partie 4
+        if self.pose_target is not None and not self.detected:
+            dist_target = self.compute_distance(
+                (self.pose_scanner.x, self.pose_scanner.y),
+                (self.pose_target.x, self.pose_target.y)
+            )
+
+            if dist_target < self.detection_radius:
+                self.detected = True
+                self.scan_done = True
+                self.stop()
+
+                msg = Bool()
+                msg.data = True
+                self.detected_pub.publish(msg)
+
+                self.get_logger().info(
+                    f'Cible détectée à ({self.pose_target.x:.2f}, {self.pose_target.y:.2f}) !'
+                )
+                return
+
+        msg = Bool()
+        msg.data = False
+        self.detected_pub.publish(msg)
+
         if self.current_waypoint >= len(self.waypoints):
             self.stop()
             self.get_logger().info('Balayage terminé !')
@@ -98,6 +132,7 @@ class TurtleScanner(Node):
 
         linear_vel  = min(linear_vel,  self.linear_speed)
         angular_vel = max(min(angular_vel, self.angular_speed), -self.angular_speed)
+
 
         cmd = Twist()
         cmd.linear.x  = linear_vel
