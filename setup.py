@@ -24,6 +24,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
+            "spawn_target=turtle_scanner_anissah_meva.spawn_target:main"
         ],
     },
 )
