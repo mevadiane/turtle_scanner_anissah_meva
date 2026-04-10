@@ -7,13 +7,17 @@ class SpawnTarget(Node):
     def __init__(self):
         super().__init__('spawn_target')
         self.client = self.create_client(Spawn, "/spawn")
+
+        while not self.client.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('Waiting for spawn service')
+            
         self.spawn_request()
     
     def spawn_request(self):
         request = Spawn.Request()
 
-        self.target_x = random.uniform(1.0, 100.0)
-        self.target_y = random.uniform(1.0, 100.0)
+        self.target_x = random.uniform(1.0, 10.0)
+        self.target_y = random.uniform(1.0, 10.0)
         request.x = self.target_x
         request.y = self.target_y
         request.theta = 0.0
